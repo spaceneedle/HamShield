@@ -1,90 +1,73 @@
+/*
 
-// BlueHAM Proto01 Connection Guide
-/**********************
-**
-**  BlueHAM Proto01 <--> Arduino
-**  ADC_SCL              A5
-**  ADC_DIO              A4
-**  GND                  GND
-**  PWM_RF_CTL           D9
-**
-**  Setting Connections
-**  MODE  -> GND
-**  SENB  -> GND
-**  PDN   -> 3.3V
-**  AVDD  -> 5V (note this should be a beefy supply, could draw up to 4As)
-**
-**
-**
-**  Pinout information for RadioPeripheral01 Prototype board
-**  GPIO0 - 
-**  GPIO1 - 
-**  GPIO2 - VHF_SEL
-**  GPIO3 - UHF_SEL
-**  GPIO4 - RX_EN
-**  GPIO5 - TX_EN
-**  GPIO6 - 
-**  GPIO7 - 
-**************************/
+SerialTransceiver is TTL Serial port "glue" to allow desktop or laptop control of the HAMShield
 
-// Arduino Wire library is required if I2Cdev I2CDEV_ARDUINO_WIRE implementation
-// is used in I2Cdev.h
+Commands:
+
+Mode           ASCII       Description                                                                                                                                  Implemented
+-------------- ----------- -------------------------------------------------------------------------------------------------------------------------------------------- -----------------
+Transmit       space       Space must be received at least every 500 mS                                                                                                 Yes
+Receive        not space   If space is not received and/or 500 mS timeout of space occurs, unit will go into receive mode                                               Yes
+CTCSS In       A<tone>;    <tone> must be a numerical ascii value with decimal point indicating CTCSS receive tone required to unsquelch                                No
+CTCSS Out      B<tone>;    <tone> must be a numerical ascii value with decimal point indicating CTCSS transmit tone                                                     No
+CTCSS Enable   C<state>;   Turns on CTCSS mode (analog tone) with 1, off with 0.                                                                                        No
+CDCSS Enable   D<state>;   Turns on CDCSS mode (digital tone) with 1, off with 0.                                                                                       No
+Bandwidth      E<mode>;    for 12.5KHz mode is 0, for 25KHz, mode is 1                                                                                                  No
+Frequency      F<freq>;    Set the receive frequency in KHz, if offset is disabled, this is the transmit frequency                                                      No
+CDCSS In       G<code>;    <code> must be a valid CDCSS code                                                                                                            No
+CDCSS Out      H<code>;    <code> must be a valid CDCSS code                                                                                                            No
+Print tones    I           Prints out all configured tones and codes, coma delimited in format: CTCSS In, CTCSS Out, CDCSS In, CDCSS Out                                No
+Power level    P<level>;   Set the power amp level, 0 = lowest, 255 = highest                                                                                           No
+Enable Offset  R<state>;   1 turns on repeater offset mode, 0 turns off repeater offset mode                                                                            No
+Squelch        S<level>;   Set the squelch level                                                                                                                        No
+TX Offset      T<freq>;    The absolute frequency of the repeater offset to transmit on in KHz                                                                          No
+Volume         V<level>;   Set the volume level of the receiver                                                                                                         No
+Reset          X           Reset all settings to default                                                                                                                No
+Sleep          Z           Sleep radio                                                                                                                                  No
+Filters        @<state>;   Set bit to enable, clear bit to disable: 0 = pre/de-emphasis, 1 = high pass filter, 2 = low pass filter (default:  ascii 7, all enabled)     No
+Vox mode       $<state>;   0 = vox off, >= 1 audio sensitivity. lower value more sensitive                                                                              No
+Mic Channel    *<state>;   Set the voice channel. 0 = signal from mic or arduino, 1 = internal tone generator                                                           No
+RSSI           ?           Respond with the current receive level in - dBm (no sign provided on numerical response)                                                     No
+Tone Gen       % (notes)   To send a tone, use the following format: Single tone: %1,<freq>,<length>; Dual tone: %2,<freq>,<freq>,<length>; DTMF: %3,<key>,<length>;    No
+
+
+
+Responses:
+
+Condition    ASCII      Description
+------------ ---------- -----------------------------------------------------------------
+Startup      *<code>;   Startup and shield connection status
+Success      !;         Generic success message for command that returns no value
+Error        X<code>;   Indicates an error code. The numerical value is the type of error
+Value        :<value>;  In response to a query
+Status       #<value>;  Unsolicited status message
+
+*/
+
 #include "Wire.h"
 #include "RDA.h"
-// #include "I2Cdev_rda.h"
-
-//typedef enum {
-#define  MAIN_S 0
-#define  RX_S 1
-#define  TX_S 2
-#define  FREQ_S 3
-#define  UHF_S 4
-#define  VHF_S 5
-#define  PWR_S 6
-#define  GPIO_S 7
-//} menu_view;
 
 int state;
 int txcount = 0;
 
-// create object for RDA
 RDA1846 radio;
 
-#define LED_PIN 13
-bool blinkState = false;
+
 
 void setup() {
-  // initialize serial communication
   Serial.begin(115200);
-  Serial.println("beginning radio setup");
-  
-  // join I2C bus (I2Cdev library doesn't do this automatically)
-   Wire.begin();
-
-  // verify connection
-  Serial.println("Testing device connections...");
-  Serial.println(radio.testConnection() ? "RDA radio connection successful" : "RDA radio connection failed");
-
-  // initialize device
-  Serial.println("Initializing I2C devices...");
+  Serial.print(";;;;;;;;;;;;;;;;;;;;;;;;;;");
+  Wire.begin();
+  int result = radio.testConnection();
+  Serial.print("*");
+  Serial.print(result,DEC);
+  Serial.print(";");
   radio.initialize(); // initializes automatically for UHF 12.5kHz channel
-
-  Serial.println("setting default Radio configuration");
-
-
-  // set frequency
-  Serial.println("changing frequency");
-  
-  
-  // set band
-  // set for 70cm
+  Serial.print("*START;");  
   radio.setUHF();
   radio.setBand(00); // 00 is 400-520MHz
   radio.setFrequency(446000); // in kHz
-  radio.setCtcssFreqToStandard();
-  Serial.print("\nCTCSS: ");
-  Serial.print(radio.getCtcssFreq(),DEC);
-  Serial.print("\n");
+
   /*
   // set for 2m
   radio.setVHF();
@@ -99,31 +82,12 @@ void setup() {
   radio.setFrequency(220000);
   */
   
-/*
-  // set to receive
-  radio.setModeReceive();
-  Serial.print("config register is: ");
-  Serial.println(radio.readCtlReg());
+
   radio.setVolume1(0xF);
   radio.setVolume2(0xF);
-  Serial.println(radio.getVolume1());
-  Serial.println(radio.getVolume2());
-  radio.setRfPower(0);
-*/
-
-
-  // set to transmit
-    radio.setModeReceive();
-  // maybe set PA bias voltage
-  Serial.println("configured for transmit");
+  radio.setModeReceive();
   radio.setTxSourceMic();
   radio.setRfPower(255); // 30 is 0.5V, which corresponds to 29 dBm out (see RF6886 datasheet)
-  
-  // configure Arduino LED for
-  pinMode(LED_PIN, OUTPUT);
-
-  //Serial.println(radio.readRSSI());
-  // pinMode(led, OUTPUT);  
   radio.setSQLoThresh(80);
   radio.setSQOn();
 }
@@ -140,12 +104,12 @@ void loop() {
            radio.setRX(0);
            radio.setTX(1);
            state = 10;
-           Serial.print("**TRANSMITTING**");
+           Serial.print("#TX,ON;");
          }
      }
     txcount++;
     if(state == 10) { 
-    if(txcount > 30000) { Serial.print("\nTransmit Off\n");radio.setRX(1); radio.setTX(0); state = 0; txcount = 0; }
+    if(txcount > 30000) { Serial.print("#TX,OFF;");radio.setRX(1); radio.setTX(0); state = 0; txcount = 0; }
     }
   }
 }
