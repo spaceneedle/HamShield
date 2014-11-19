@@ -29,7 +29,7 @@ Vox mode       $<state>;   0 = vox off, >= 1 audio sensitivity. lower value more
 Mic Channel    *<state>;   Set the voice channel. 0 = signal from mic or arduino, 1 = internal tone generator                                                           No
 RSSI           ?           Respond with the current receive level in - dBm (no sign provided on numerical response)                                                     No
 Tone Gen       % (notes)   To send a tone, use the following format: Single tone: %1,<freq>,<length>; Dual tone: %2,<freq>,<freq>,<length>; DTMF: %3,<key>,<length>;    No
-
+Voice Level    ^           Respond with the current voice level (VSSI)
 
 
 Responses:
@@ -41,6 +41,7 @@ Success      !;         Generic success message for command that returns no valu
 Error        X<code>;   Indicates an error code. The numerical value is the type of error
 Value        :<value>;  In response to a query
 Status       #<value>;  Unsolicited status message
+Debug Msg    @<text>;   32 character debug message
 
 */
 
@@ -49,6 +50,10 @@ Status       #<value>;  Unsolicited status message
 
 int state;
 int txcount = 0;
+long timer = 0;
+long freq = 144390;
+char cmdbuff[32] = "";
+
 
 RDA1846 radio;
 
@@ -64,25 +69,7 @@ void setup() {
   Serial.print(";");
   radio.initialize(); // initializes automatically for UHF 12.5kHz channel
   Serial.print("*START;");  
-  radio.setUHF();
-  radio.setBand(00); // 00 is 400-520MHz
-  radio.setFrequency(446000); // in kHz
-
-  /*
-  // set for 2m
-  radio.setVHF();
-  radio.setBand(3); // 0b11 is 134-174MHz
-  radio.setFrequency(154130);
-  */
-  
-  /*
-  // set for 1.25m
-  radio.setVHF();
-  radio.setBand(2); // 10 is 200-260MHz
-  radio.setFrequency(220000);
-  */
-  
-
+  radio.frequency(freq);
   radio.setVolume1(0xF);
   radio.setVolume2(0xF);
   radio.setModeReceive();
@@ -92,28 +79,89 @@ void setup() {
   radio.setSQOn();
 }
 
-void loop() {  
+void loop() {
+  
   if(Serial.available()) { 
+
     int text = Serial.read();
-    switch (text) { 
-       case 10:
-         if(text == 32) { txcount = 0; }
+
+    switch (state) { 
+
+      case 10:
+         if(text == 32) { timer = millis();}
          break;
+
        case 0:
-         if(text == 32) { 
-           radio.setRX(0);
-           radio.setTX(1);
-           state = 10;
-           Serial.print("#TX,ON;");
+         switch(text) {
+           
+           case 32:  // space - transmit
+               radio.setRX(0);
+               radio.setTX(1);
+               state = 10;
+               Serial.print("#TX,ON;");
+               timer = millis();
+               break;
+           
+           case 63: // ? - RSSI
+               Serial.print(":");
+               Serial.print(radio.readRSSI(),DEC);
+               Serial.print(";");
+               break;
+             
+           case 65: // A - CTCSS In
+               break;
+           
+           case 66: // B - CTCSS Out
+               break;
+            
+           case 67: // C - CTCSS Enable
+               break;
+               
+           case 68: // D - CDCSS Enable
+               break;
+               
+           case 70: // F - frequency
+               getValue();
+               freq = atol(cmdbuff);
+               if(radio.frequency(freq) == true) { Serial.print("@"); Serial.print(freq,DEC); Serial.print(";!;"); } else { Serial.print("X1;"); } 
+               break;
+           
+           case 94: // ^ - VSSI (voice) level
+               Serial.print(":");
+               Serial.print(radio.readVSSI(),DEC); 
+               Serial.print(";");
          }
+        break;
      }
-    txcount++;
-    if(state == 10) { 
-    if(txcount > 30000) { Serial.print("#TX,OFF;");radio.setRX(1); radio.setTX(0); state = 0; txcount = 0; }
+
+  }
+      if(state == 10) { 
+    if(millis() > (timer + 500)) { Serial.print("#TX,OFF;");radio.setRX(1); radio.setTX(0); state = 0; txcount = 0; }
     }
+}
+
+void getValue() {
+  int p = 0;
+  char temp;
+  for(;;) {
+     if(Serial.available()) { 
+        temp = Serial.read();
+        if(temp == 59) { cmdbuff[p] = 0; Serial.print("@");
+           for(int x = 0; x < 32; x++) {  Serial.print(cmdbuff[x]); }
+         return;
+        }
+        cmdbuff[p] = temp;
+        p++;
+        if(p == 32) { 
+         Serial.print("@");
+           for(int x = 0; x < 32; x++) { 
+             Serial.print(cmdbuff[x]);
+           } 
+          
+          cmdbuff[0] = 0; 
+
+        Serial.print("X0;"); return; }      // some sort of alignment issue? lets not feed junk into whatever takes this string in
+     }
   }
 }
 
-
-        
-    
