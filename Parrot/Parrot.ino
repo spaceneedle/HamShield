@@ -1,17 +1,20 @@
 /* 
 
-Record sound and then plays it back
+Record sound and then plays it back a few times.
+Very low sound quality @ 2KHz 0.75 seconds
+A bit robotic and weird
 
 */
 
 #include <RDA.h>
 #include <Wire.h>
 
-#define RATE 100
+#define RATE 500
+#define SIZE 1500
 
 RDA1846 radio;
 
-char sound[1500];
+char sound[SIZE];
 unsigned int sample1;
 int x = -1;
 int16_t rssi;
@@ -29,7 +32,7 @@ void setup() {
   radio.setTxSourceMic();
   radio.setSQLoThresh(80);
   radio.setSQOn();
-  setPwmFrequency(9, 8);
+  setPwmFrequency(9, 1);
 }
 
 
@@ -38,7 +41,7 @@ void loop() {
    rssi = radio.readRSSI();
    if(rssi > -100) {
      if(x == -1) { 
-       for(x = 0; x < 1500; x++) {
+       for(x = 0; x < SIZE; x++) {
        if(mode == 4) { 
        sample1 = analogRead(0);
        sound[x] = sample1 >> 4;
@@ -60,7 +63,8 @@ void loop() {
        radio.setTX(1);
        delay(500);
        tone(9,1000,500); delay(750);
-       for(x = 0; x < 1500; x++) {
+       for(int r = 0; r < 10; r++) { 
+       for(x = 0; x < SIZE; x++) {
          if(mode == 4) { 
 
          analogWrite(9,sound[x] << 4);
@@ -72,8 +76,8 @@ void loop() {
          delayMicroseconds(RATE); x++;
          analogWrite(9,sound[x]);
          delayMicroseconds(RATE);         
-         }
-       }
+         } 
+       } }
        tone(9,1000,500); delay(750);
      radio.setTX(0); radio.setModeReceive();
      x = -1;

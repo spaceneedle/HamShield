@@ -31,7 +31,6 @@ void setup() {
   radio.setVolume1(0xF);
   radio.setVolume2(0xF);
   radio.setModeReceive();
-  radio.setModeReceive();
   radio.setTxSourceMic();
   radio.setSQLoThresh(80);
   radio.setSQOn();
@@ -48,6 +47,7 @@ void loop() {
       radio.setTX(1);
       morse("1ZZ9ZZ/B CN87 ARDUINO HAMSHIELD");
       radio.setTX(0);
+        radio.setModeReceive();
       Serial.print("TX Off");
       delay(30000);    
    } else { Serial.println("The channel was busy. Waiting 5 seconds."); delay(5000); } 
