@@ -52,7 +52,14 @@ int state;
 int txcount = 0;
 long timer = 0;
 long freq = 144390;
+long tx = 0;
 char cmdbuff[32] = "";
+int temp = 0;
+int repeater = 0;
+float ctcssin = 0;
+float ctcssout = 0;
+int cdcssin = 0;
+int cdcssout = 0;
 
 
 RDA1846 radio;
@@ -95,6 +102,7 @@ void loop() {
          switch(text) {
            
            case 32:  // space - transmit
+               if(repeater == 1) { radio.frequency(tx); } 
                radio.setRX(0);
                radio.setTX(1);
                state = 10;
@@ -109,6 +117,9 @@ void loop() {
                break;
              
            case 65: // A - CTCSS In
+               getValue();
+               ctcssin = atof(cmdbuff);
+               radio.setCtcss(ctcssin);
                break;
            
            case 66: // B - CTCSS Out
@@ -125,6 +136,31 @@ void loop() {
                freq = atol(cmdbuff);
                if(radio.frequency(freq) == true) { Serial.print("@"); Serial.print(freq,DEC); Serial.print(";!;"); } else { Serial.print("X1;"); } 
                break;
+               
+           case 80: // P - power level
+               getValue();
+               temp = atol(cmdbuff);
+               radio.setRfPower(temp);
+               break;
+           
+           case 82: // R - repeater offset mode
+               getValue();
+               temp = atol(cmdbuff);
+               if(temp == 0) { repeater = 0; }
+               if(temp == 1) { repeater = 1; }
+               break;
+           
+           case 83: // S - squelch
+               getValue();
+               temp = atol(cmdbuff);
+               radio.setSQLoThresh(temp);
+               break;
+           
+           case 84: // T - transmit offset 
+               getValue();
+               tx = atol(cmdbuff);
+               break;
+      
            
            case 94: // ^ - VSSI (voice) level
                Serial.print(":");
@@ -136,7 +172,7 @@ void loop() {
 
   }
       if(state == 10) { 
-    if(millis() > (timer + 500)) { Serial.print("#TX,OFF;");radio.setRX(1); radio.setTX(0); state = 0; txcount = 0; }
+    if(millis() > (timer + 500)) { Serial.print("#TX,OFF;");radio.setRX(1); radio.setTX(0); if(repeater == 1) { radio.frequency(freq); }  state = 0; txcount = 0; }
     }
 }
 
