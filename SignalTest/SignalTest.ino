@@ -10,11 +10,11 @@ Plays back the current signal strength level and morses out it's call sign at th
 
 /* Standard libraries and variable init */
 
-#include <RDA.h>
+#include <HAMShield.h>
 #include <Wire.h>
 #include <PCM.h>
 
-RDA1846 radio;
+HAMShield radio;
 int16_t rssi;
 int peak = -150;
 char sig[8];
