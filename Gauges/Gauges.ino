@@ -7,10 +7,10 @@ Simple gauges for the radio receiver.
 
 */
 
-#include <RDA.h>
+#include <HAMShield.h>
 #include <Wire.h>
 
-RDA1846 radio;
+HAMShield radio;
 
 void clr() { 
 /* Serial.write(27);
@@ -28,12 +28,6 @@ void setup() {
   Serial.println(result,DEC); 
   radio.initialize();
   radio.setFrequency(446000);
-  radio.setVolume1(0xF);
-  radio.setVolume2(0xF);
-  radio.setModeReceive();
-  radio.setTxSourceMic();
-  radio.setSQLoThresh(80);
-  radio.setSQOn();
   Serial.println("Entering gauges...");
   tone(9,1000);
   delay(2000);

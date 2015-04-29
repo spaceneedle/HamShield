@@ -8,16 +8,12 @@ Beacon will check to see if the channel is clear before it will transmit.
 
 */
 
-#include <RDA.h>
+#include <HAMShield.h>
 #include <Wire.h>
 
 #define DOT 100
 
-RDA1846 radio;
-
-const char *ascii = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,?'!/()&:;=+-_\"$@",
-  *itu[] = { ".-","-...","-.-.","-..",".","..-.","--.","....","..",".---","-.-",".-..","--","-.","---",".--.","--.-",".-.","...","-","..-","...-",".--","-..-","-.--","--..","-----",".----","..---","...--","....-",".....","-....","--...","---..","----.",".-.-.-","--..--","..--..",".----.","-.-.--","-..-.","-.--.","-.--.-",".-...","---...","-.-.-.","-...-",".-.-.","-....-","..--.-",".-..-.","...-..-",".--.-."
-  };
+HAMShield radio;
 
 void setup() { 
   Serial.begin(9600);
@@ -28,12 +24,6 @@ void setup() {
   Serial.println(result,DEC);
   radio.initialize();
   radio.setFrequency(446000);
-  radio.setVolume1(0xF);
-  radio.setVolume2(0xF);
-  radio.setModeReceive();
-  radio.setTxSourceMic();
-  radio.setSQLoThresh(80);
-  radio.setSQOn();
   Serial.println("Done with radio beacon setup.");
 }
 
@@ -44,8 +34,8 @@ void loop() {
    Serial.println(rssi,DEC);
    if(rssi < -100) {
       Serial.println("Signal is clear -- Transmitting");
-      radio.setTX(1);
-      morse("1ZZ9ZZ/B CN87 ARDUINO HAMSHIELD");
+      radio.setModeTransmit();
+      radio.morseOut("1ZZ9ZZ/B CN87 ARDUINO HAMSHIELD");
       radio.setTX(0);
         radio.setModeReceive();
       Serial.print("TX Off");
@@ -53,29 +43,4 @@ void loop() {
    } else { Serial.println("The channel was busy. Waiting 5 seconds."); delay(5000); } 
 }
 
-void morse(char buffer[80]) { 
- Serial.print("Sending in morse ["); 
- for(int x = 0; x < strlen(buffer); x++) {
-  Serial.print(buffer[x]);  
-  char output = lookup(buffer[x]); 
-  if(buffer[x] != ' ') { 
-  for(int m = 0; m < strlen(itu[output]); m++) {
-     if(itu[output][m] == '-') { tone(9,1000,DOT*3); delay(DOT*3); }
-     else { tone(9,1000,DOT); delay(DOT); }
-     delay(DOT);
-     }
-     delay(DOT*3);
-  } else { delay(DOT*7); } 
- }
- Serial.println("]");
- return;
-}
 
-char lookup(char letter) { 
- for(int x = 0; x < 54; x++) { 
-  if(letter == ascii[x]) { 
-    return x; 
-   // return itu[x];
-  } 
- }
-}

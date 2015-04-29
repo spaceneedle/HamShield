@@ -6,13 +6,13 @@ A bit robotic and weird
 
 */
 
-#include <RDA.h>
+#include <HAMShield.h>
 #include <Wire.h>
 
 #define RATE 500
 #define SIZE 1500
 
-RDA1846 radio;
+HAMShield radio;
 
 char sound[SIZE];
 unsigned int sample1;
@@ -25,13 +25,6 @@ void setup() {
   // int result = radio.testConnection();
   radio.initialize();
   radio.setFrequency(446000);
-  radio.setVolume1(0xF);
-  radio.setVolume2(0xF);
-  radio.setModeReceive();
- 
-  radio.setTxSourceMic();
-  radio.setSQLoThresh(80);
-  radio.setSQOn();
   setPwmFrequency(9, 1);
 }
 
@@ -60,7 +53,7 @@ void loop() {
    }
    if(rssi < -100) { 
      if(x == 1500) { 
-       radio.setTX(1);
+       radio.setModeTransmit();
        delay(500);
        tone(9,1000,500); delay(750);
        for(int r = 0; r < 10; r++) { 
@@ -79,7 +72,7 @@ void loop() {
          } 
        } }
        tone(9,1000,500); delay(750);
-     radio.setTX(0); radio.setModeReceive();
+     radio.setModeReceive();
      x = -1;
      }
    }

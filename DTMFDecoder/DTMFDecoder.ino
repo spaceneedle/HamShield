@@ -30,7 +30,7 @@
 // Arduino Wire library is required if I2Cdev I2CDEV_ARDUINO_WIRE implementation
 // is used in I2Cdev.h
 #include "Wire.h"
-#include "RDA.h"
+#include "HAMShield.h"
 
 #include <Goertzel.h>
 
@@ -58,7 +58,7 @@ const float SAMPLING_FREQUENCY = 8900;
 Goertzel goertzel = Goertzel(TARGET_FREQUENCY, N, SAMPLING_FREQUENCY);
 
 // create object for RDA
-RDA1846 radio;
+HAMShield radio;
 
 
 #define LED_PIN 13
@@ -87,50 +87,11 @@ void setup() {
   Serial.println("changing frequency");
   
   
-  // set band
-  // set for 70cm
-  radio.setUHF();
-  radio.setBand(00); // 00 is 400-520MHz
   radio.setFrequency(446000); // in kHz
-  
-  /*
-  // set for 2m
-  radio.setVHF();
-  radio.setBand(3); // 0b11 is 134-174MHz
-  radio.setFrequency(154130);
-  */
-  
-  /*
-  // set for 1.25m
-  radio.setVHF();
-  radio.setBand(2); // 10 is 200-260MHz
-  radio.setFrequency(220000);
-  */
-  
-/*
-  // set to receive
   radio.setModeReceive();
-  Serial.print("config register is: ");
-  Serial.println(radio.readCtlReg());
-  radio.setVolume1(0xF);
-  radio.setVolume2(0xF);
-  Serial.println(radio.getVolume1());
-  Serial.println(radio.getVolume2());
-  radio.setRfPower(0);
-*/
-
-
-  // set to transmit
-  radio.setModeTransmit();
-  // maybe set PA bias voltage
-  Serial.println("configured for transmit");
-  radio.setTxSourceMic();
-  radio.setRfPower(255); // 30 is 0.5V, which corresponds to 29 dBm out (see RF6886 datasheet)
   
   // configure Arduino LED for
   pinMode(LED_PIN, OUTPUT);
-
-  //Serial.println(radio.readRSSI());
   
   state = MAIN_S;
   print_menu();

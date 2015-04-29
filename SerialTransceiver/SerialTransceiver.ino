@@ -46,7 +46,7 @@ Debug Msg    @<text>;   32 character debug message
 */
 
 #include "Wire.h"
-#include "RDA.h"
+#include "HAMShield.h"
 
 int state;
 int txcount = 0;
@@ -62,7 +62,7 @@ int cdcssin = 0;
 int cdcssout = 0;
 
 
-RDA1846 radio;
+HAMShield radio;
 
 
 
