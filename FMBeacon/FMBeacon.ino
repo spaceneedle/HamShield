@@ -28,11 +28,7 @@ void setup() {
 }
 
 void loop() {
-   int16_t rssi = radio.readRSSI();
-   for(int s = 0; s < 20; s++) {  rssi = radio.readRSSI(); delay(100); } /* take a few samples because RSSI is a gradual thing */
-   Serial.print("Current signal strength: ");
-   Serial.println(rssi,DEC);
-   if(rssi < -100) {
+   if(radio.waitForChannel(1000,2000)) {
       Serial.println("Signal is clear -- Transmitting");
       radio.setModeTransmit();
       radio.morseOut("1ZZ9ZZ/B CN87 ARDUINO HAMSHIELD");
@@ -40,7 +36,7 @@ void loop() {
         radio.setModeReceive();
       Serial.print("TX Off");
       delay(30000);    
-   } else { Serial.println("The channel was busy. Waiting 5 seconds."); delay(5000); } 
+   } else { Serial.println("The channel was busy. Waiting 30 seconds."); delay(30000); } 
 }
 
 
