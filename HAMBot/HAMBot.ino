@@ -11,7 +11,7 @@ void setup() {
   Robot.begin();
   Wire.begin();
   radio.initialize();
-  radio.setFrequency(144000);
+  radio.setFrequency(145510);
 }
 
 void loop() {
