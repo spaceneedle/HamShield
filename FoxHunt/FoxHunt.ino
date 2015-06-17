@@ -18,14 +18,16 @@ void setup() {
 }
 
 void loop() {
-   waitMinute(INTERVAL);
-   if(radio.waitForChannel(30000,2000)) {
-     radio.setModeTransmit();
+   waitMinute(INTERVAL);                              // wait before transmitting
+   if(radio.waitForChannel(30000,2000)) {             // wait for a clear channel, abort after 30 seconds, wait 2 seconds of dead air for breakers
+     radio.setModeTransmit();                         // turn on transmit mode
      tone(1000,11,TRANSMITLENGTH * 60 * 1000);        // play a long solid tone
-     radio.morseOut("1ZZ9ZZ/B FOXHUNT");
-     radio.setModeReceive();
+     radio.morseOut("1ZZ9ZZ/B FOXHUNT");              // identify the fox hunt transmitter
+     radio.setModeReceive();                          // turn off the transmit mode
    }
 }
+
+// a function so we can wait by minutes
 
 void waitMinute(int period) { 
   delay(period * 60 * 1000);
