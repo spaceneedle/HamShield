@@ -12,7 +12,7 @@ Plays back the current signal strength level and morses out it's call sign at th
 
 #include <HAMShield.h>
 #include <Wire.h>
-#include <PCM.h>
+#include <HSPCM.h>
 
 HAMShield radio;
 int16_t rssi;
@@ -106,7 +106,7 @@ void loop() {
      Serial.println("Transmit On");
      radio.setTX(1);
      delay(250);
-     tone(11,1000,500); 
+    // tone(9,1000,500); 
      delay(1000);
      itoa(peak,sig,10);
      Serial.print(sig);
@@ -127,10 +127,10 @@ void loop() {
      }
      startPlayback(dbm,sizeof(dbm));
      delay(2000);  
-     tone(11,1000,500); 
+   //  tone(9,1000,500); 
      delay(1000);
      Serial.println("done!");
-     radio.morseOut(CALLSIGN);
+     // radio.morseOut(CALLSIGN);
      radio.setTX(0);
      Serial.println("Transmit off");
      radio.setModeReceive();

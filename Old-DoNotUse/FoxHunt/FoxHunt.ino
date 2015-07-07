@@ -12,11 +12,23 @@
 HAMShield radio;
 
 void setup() { 
+  Serial.begin(9600);
   Wire.begin();
+  // Wire.setClock(400000);
+  pinMode(9,OUTPUT);
+  Serial.print("Radio setup...");
   radio.initialize();
-  radio.setFrequency(145510);
+  Serial.print("good!");
+  radio.dangerMode();
+  radio.frequency(145510);
+  radio.setModeTransmit();
+  tone(9,400); delay(250); tone(9,800); delay(250); noTone(9);
+  for(;;) { } 
   radio.setModeReceive();
+  Serial.println("ready");
 }
+
+/* Fox Hunt! */
 
 void loop() {
    waitMinute(INTERVAL + random(0,RANDOMCHANCE));     // wait before transmitting, randomly up to 3 minutes later
